@@ -6,6 +6,131 @@ require_once __DIR__ . '/../config/database.php';
 
 $method = $_SERVER['REQUEST_METHOD'];
 
+function normalizeText(string $text): string
+{
+    $text = mb_strtolower($text, 'UTF-8');
+    $text = preg_replace('/[^\p{L}\p{N}\s]+/u', ' ', $text);
+    $text = preg_replace('/\s+/u', ' ', trim($text));
+
+    return $text;
+}
+
+function getWordStem(string $word): string
+{
+    $word = normalizeText($word);
+
+    if (mb_strlen($word, 'UTF-8') <= 3) {
+        return $word;
+    }
+
+    $endings = [
+        'ами',
+        'ями',
+        'ого',
+        'ему',
+        'ому',
+        'ыми',
+        'ими',
+        'ее',
+        'ие',
+        'ые',
+        'ое',
+        'ей',
+        'ой',
+        'ий',
+        'ый',
+        'ой',
+        'ем',
+        'им',
+        'ым',
+        'ом',
+        'ах',
+        'ях',
+        'ов',
+        'ев',
+        'ам',
+        'ям',
+        'а',
+        'я',
+        'ы',
+        'и',
+        'у',
+        'ю',
+        'е',
+        'о',
+        'ь'
+    ];
+
+    foreach ($endings as $ending) {
+        $endingLength = mb_strlen($ending, 'UTF-8');
+        $wordLength = mb_strlen($word, 'UTF-8');
+
+        if (
+            $wordLength > $endingLength + 2 &&
+            mb_substr($word, -$endingLength, null, 'UTF-8') === $ending
+        ) {
+            return mb_substr(
+                $word,
+                0,
+                $wordLength - $endingLength,
+                'UTF-8'
+            );
+        }
+    }
+
+    return $word;
+}
+
+function raceMatchesSearch(array $race, string $search): bool
+{
+    $search = normalizeText($search);
+
+    if ($search === '') {
+        return true;
+    }
+
+    $searchWords = preg_split('/\s+/u', $search);
+
+    $raceText = normalizeText(
+        ($race['name'] ?? '') . ' ' .
+        ($race['location'] ?? '') . ' ' .
+        ($race['status'] ?? '')
+    );
+
+    $raceWords = preg_split('/\s+/u', $raceText);
+
+    foreach ($searchWords as $searchWord) {
+
+        if ($searchWord === '') {
+            continue;
+        }
+
+        $stem = getWordStem($searchWord);
+
+        $found = false;
+
+        foreach ($raceWords as $raceWord) {
+
+            $raceStem = getWordStem($raceWord);
+
+            if (
+                mb_strpos($raceWord, $searchWord, 0, 'UTF-8') !== false ||
+                mb_strpos($raceWord, $stem, 0, 'UTF-8') !== false ||
+                mb_strpos($raceStem, $stem, 0, 'UTF-8') !== false
+            ) {
+                $found = true;
+                break;
+            }
+        }
+
+        if (!$found) {
+            return false;
+        }
+    }
+
+    return true;
+}
+
 try {
 
     if ($method === 'GET') {
@@ -22,7 +147,21 @@ try {
             ORDER BY race_date DESC, id DESC
         ");
 
-        $races = $stmt->fetchAll();
+        $races = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+        $search = trim($_GET['search'] ?? '');
+
+        if ($search !== '') {
+
+            $races = array_values(
+                array_filter(
+                    $races,
+                    function ($race) use ($search) {
+                        return raceMatchesSearch($race, $search);
+                    }
+                )
+            );
+        }
 
         echo json_encode([
             'success' => true,
