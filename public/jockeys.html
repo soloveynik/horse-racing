@@ -1,0 +1,438 @@
+<!DOCTYPE html>
+<html lang="ru">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>Жокеи — Скачки</title>
+
+    <link rel="stylesheet" href="css/style.css">
+
+</head>
+
+<body>
+
+<header class="header">
+
+    <div class="logo">
+        🐎 Скачки
+    </div>
+
+    <div class="user-info">
+
+        <span id="username"></span>
+
+        <button id="backButton">
+            Главная
+        </button>
+
+        <button id="logoutButton">
+            Выйти
+        </button>
+
+    </div>
+
+</header>
+
+
+<main class="container">
+
+    <h1>Жокеи</h1>
+
+    <button id="showFormButton">
+        + Добавить жокея
+    </button>
+
+
+    <div
+        id="jockeyFormContainer"
+        style="display: none;"
+    >
+
+        <h2>Добавление жокея</h2>
+
+        <form id="jockeyForm">
+
+            <input
+                type="text"
+                id="name"
+                placeholder="Имя жокея"
+                required
+            >
+
+            <input
+                type="number"
+                id="experience_years"
+                placeholder="Стаж, лет"
+                min="0"
+            >
+
+            <button type="submit">
+                Сохранить
+            </button>
+
+            <button
+                type="button"
+                id="cancelButton"
+            >
+                Отмена
+            </button>
+
+        </form>
+
+        <p id="formMessage"></p>
+
+    </div>
+
+
+    <h2>Список жокеев</h2>
+
+    <div id="jockeysContainer">
+        Загрузка...
+    </div>
+
+</main>
+
+
+<script>
+
+async function checkAuth() {
+
+    const response = await fetch(
+        '../api/auth.php?action=me'
+    );
+
+    const result = await response.json();
+
+    if (!result.success) {
+
+        window.location.href = 'login.html';
+
+        return;
+    }
+
+    document.getElementById('username').textContent =
+        result.user.username;
+}
+
+
+async function loadJockeys() {
+
+    const response = await fetch(
+        '../api/jockeys.php'
+    );
+
+    const result = await response.json();
+
+    const container =
+        document.getElementById('jockeysContainer');
+
+
+    if (!result.success) {
+
+        container.textContent =
+            'Не удалось загрузить список жокеев';
+
+        return;
+    }
+
+
+    if (result.data.length === 0) {
+
+        container.innerHTML =
+            '<p>Жокеи пока не добавлены.</p>';
+
+        return;
+    }
+
+
+    let html = `
+        <table border="1" cellpadding="10">
+
+            <thead>
+
+                <tr>
+
+                    <th>ID</th>
+
+                    <th>Имя</th>
+
+                    <th>Стаж</th>
+
+                    <th>Дата добавления</th>
+
+                    <th>Действия</th>
+
+                </tr>
+
+            </thead>
+
+            <tbody>
+    `;
+
+
+    result.data.forEach(jockey => {
+
+        html += `
+
+            <tr>
+
+                <td>${jockey.id}</td>
+
+                <td>${jockey.name}</td>
+
+                <td>${jockey.experience_years ?? ''}</td>
+
+                <td>${jockey.created_at}</td>
+
+                <td>
+
+                    <button
+                        onclick="editJockey(${jockey.id})"
+                    >
+                        Изменить
+                    </button>
+
+                    <button
+                        onclick="deleteJockey(${jockey.id})"
+                    >
+                        Удалить
+                    </button>
+
+                </td>
+
+            </tr>
+
+        `;
+
+    });
+
+
+    html += `
+
+            </tbody>
+
+        </table>
+
+    `;
+
+
+    container.innerHTML = html;
+}
+
+
+document
+    .getElementById('showFormButton')
+    .addEventListener('click', function() {
+
+        document
+            .getElementById('jockeyFormContainer')
+            .style.display = 'block';
+
+    });
+
+
+document
+    .getElementById('cancelButton')
+    .addEventListener('click', function() {
+
+        document
+            .getElementById('jockeyFormContainer')
+            .style.display = 'none';
+
+    });
+
+
+document
+    .getElementById('jockeyForm')
+    .addEventListener('submit', async function(event) {
+
+        event.preventDefault();
+
+
+        const data = {
+
+            name:
+                document.getElementById('name').value,
+
+            experience_years:
+                document.getElementById(
+                    'experience_years'
+                ).value
+
+        };
+
+
+        const response = await fetch(
+            '../api/jockeys.php',
+            {
+                method: 'POST',
+
+                headers: {
+                    'Content-Type':
+                        'application/json'
+                },
+
+                body: JSON.stringify(data)
+            }
+        );
+
+
+        const result =
+            await response.json();
+
+
+        const message =
+            document.getElementById('formMessage');
+
+
+        if (result.success) {
+
+            message.textContent =
+                'Жокей успешно добавлен';
+
+            document
+                .getElementById('jockeyForm')
+                .reset();
+
+            document
+                .getElementById('jockeyFormContainer')
+                .style.display = 'none';
+
+            loadJockeys();
+
+        } else {
+
+            message.textContent =
+                result.message ||
+                'Ошибка добавления';
+
+        }
+
+    });
+
+
+async function editJockey(id) {
+
+    const name = prompt(
+        'Введите новое имя жокея:'
+    );
+
+    if (!name) {
+        return;
+    }
+
+
+    const experienceYears = prompt(
+        'Введите стаж в годах:'
+    );
+
+
+    const response = await fetch(
+        `../api/jockeys.php?id=${id}`,
+        {
+            method: 'PUT',
+
+            headers: {
+                'Content-Type':
+                    'application/json'
+            },
+
+            body: JSON.stringify({
+
+                name: name,
+
+                experience_years:
+                    experienceYears
+
+            })
+        }
+    );
+
+
+    const result =
+        await response.json();
+
+
+    alert(result.message);
+
+
+    if (result.success) {
+        loadJockeys();
+    }
+}
+
+
+async function deleteJockey(id) {
+
+    const confirmed = confirm(
+        'Вы действительно хотите удалить жокея?'
+    );
+
+
+    if (!confirmed) {
+        return;
+    }
+
+
+    const response = await fetch(
+        `../api/jockeys.php?id=${id}`,
+        {
+            method: 'DELETE'
+        }
+    );
+
+
+    const result =
+        await response.json();
+
+
+    alert(result.message);
+
+
+    if (result.success) {
+        loadJockeys();
+    }
+}
+
+
+document
+    .getElementById('backButton')
+    .addEventListener('click', function() {
+
+        window.location.href = 'index.php';
+
+    });
+
+
+document
+    .getElementById('logoutButton')
+    .addEventListener('click', async function() {
+
+        await fetch(
+            '../api/auth.php?action=logout',
+            {
+                method: 'POST'
+            }
+        );
+
+        window.location.href = 'login.html';
+
+    });
+
+
+checkAuth();
+
+loadJockeys();
+
+</script>
+
+</body>
+
+</html>

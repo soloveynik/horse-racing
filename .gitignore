@@ -1,0 +1,18 @@
+# Переменные окружения
+.env
+
+# Системные файлы Windows
+Thumbs.db
+Desktop.ini
+
+# IDE
+.vscode/
+.idea/
+
+# Временные файлы
+*.log
+*.tmp
+
+# Кэш
+cache/
+temp/

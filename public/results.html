@@ -1,0 +1,634 @@
+<!DOCTYPE html>
+<html lang="ru">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Результаты — Скачки</title>
+
+    <link rel="stylesheet" href="css/style.css">
+
+</head>
+
+<body>
+
+<header class="header">
+
+    <div class="logo">
+        🐎 Скачки
+    </div>
+
+    <div class="user-info">
+
+        <span id="username"></span>
+
+        <button id="backButton">
+            Главная
+        </button>
+
+        <button id="logoutButton">
+            Выйти
+        </button>
+
+    </div>
+
+</header>
+
+
+<main class="container">
+
+    <h1>Результаты скачек</h1>
+
+
+    <button id="showFormButton">
+        + Добавить результат
+    </button>
+
+
+    <div
+        id="resultFormContainer"
+        style="display: none;"
+    >
+
+        <h2>Добавление результата</h2>
+
+
+        <form id="resultForm">
+
+            <label>
+                Скачка
+            </label>
+
+            <select
+                id="race_id"
+                required
+            >
+
+                <option value="">
+                    Выберите скачку
+                </option>
+
+            </select>
+
+
+            <label>
+                Лошадь
+            </label>
+
+            <select
+                id="horse_id"
+                required
+            >
+
+                <option value="">
+                    Выберите лошадь
+                </option>
+
+            </select>
+
+
+            <label>
+                Жокей
+            </label>
+
+            <select
+                id="jockey_id"
+                required
+            >
+
+                <option value="">
+                    Выберите жокея
+                </option>
+
+            </select>
+
+
+            <label>
+                Место
+            </label>
+
+            <input
+                type="number"
+                id="place"
+                min="1"
+                required
+            >
+
+
+            <label>
+                Время финиша
+            </label>
+
+            <input
+                type="text"
+                id="finish_time"
+                placeholder="01:25:30"
+            >
+
+
+            <button type="submit">
+                Сохранить
+            </button>
+
+            <button
+                type="button"
+                id="cancelButton"
+            >
+                Отмена
+            </button>
+
+        </form>
+
+
+        <p id="formMessage"></p>
+
+    </div>
+
+
+    <h2>Таблица результатов</h2>
+
+    <div id="resultsContainer">
+        Загрузка...
+    </div>
+
+</main>
+
+
+<script>
+
+
+async function checkAuth() {
+
+    const response = await fetch(
+        '../api/auth.php?action=me'
+    );
+
+    const result = await response.json();
+
+    if (!result.success) {
+
+        window.location.href = 'login.html';
+
+        return;
+    }
+
+    document.getElementById('username').textContent =
+        result.user.username;
+}
+
+
+async function loadRaces() {
+
+    const response = await fetch(
+        '../api/races.php'
+    );
+
+    const result = await response.json();
+
+    const select =
+        document.getElementById('race_id');
+
+
+    if (!result.success) {
+        return;
+    }
+
+
+    result.data.forEach(race => {
+
+        const option =
+            document.createElement('option');
+
+        option.value = race.id;
+
+        option.textContent =
+            `${race.name} — ${race.race_date}`;
+
+        select.appendChild(option);
+
+    });
+}
+
+
+async function loadHorses() {
+
+    const response = await fetch(
+        '../api/horses.php'
+    );
+
+    const result = await response.json();
+
+    const select =
+        document.getElementById('horse_id');
+
+
+    if (!result.success) {
+        return;
+    }
+
+
+    result.data.forEach(horse => {
+
+        const option =
+            document.createElement('option');
+
+        option.value = horse.id;
+
+        option.textContent =
+            horse.name;
+
+        select.appendChild(option);
+
+    });
+}
+
+
+async function loadJockeys() {
+
+    const response = await fetch(
+        '../api/jockeys.php'
+    );
+
+    const result = await response.json();
+
+    const select =
+        document.getElementById('jockey_id');
+
+
+    if (!result.success) {
+        return;
+    }
+
+
+    result.data.forEach(jockey => {
+
+        const option =
+            document.createElement('option');
+
+        option.value = jockey.id;
+
+        option.textContent =
+            jockey.name;
+
+        select.appendChild(option);
+
+    });
+}
+
+
+async function loadResults() {
+
+    const response = await fetch(
+        '../api/results.php'
+    );
+
+    const result = await response.json();
+
+    const container =
+        document.getElementById('resultsContainer');
+
+
+    if (!result.success) {
+
+        container.innerHTML =
+            '<p>Ошибка загрузки результатов.</p>';
+
+        return;
+    }
+
+
+    if (result.data.length === 0) {
+
+        container.innerHTML =
+            '<p>Результатов пока нет.</p>';
+
+        return;
+    }
+
+
+    let html = `
+
+        <table border="1" cellpadding="10">
+
+            <thead>
+
+                <tr>
+
+                    <th>ID</th>
+
+                    <th>Скачка</th>
+
+                    <th>Лошадь</th>
+
+                    <th>Жокей</th>
+
+                    <th>Место</th>
+
+                    <th>Время</th>
+
+                    <th>Действия</th>
+
+                </tr>
+
+            </thead>
+
+            <tbody>
+
+    `;
+
+
+    result.data.forEach(item => {
+
+        html += `
+
+            <tr>
+
+                <td>${item.id}</td>
+
+                <td>${item.race_name}</td>
+
+                <td>${item.horse_name}</td>
+
+                <td>${item.jockey_name}</td>
+
+                <td>${item.place}</td>
+
+                <td>${item.finish_time ?? ''}</td>
+
+                <td>
+
+                    <button
+                        onclick="editResult(${item.id})"
+                    >
+                        Изменить
+                    </button>
+
+                    <button
+                        onclick="deleteResult(${item.id})"
+                    >
+                        Удалить
+                    </button>
+
+                </td>
+
+            </tr>
+
+        `;
+
+    });
+
+
+    html += `
+
+            </tbody>
+
+        </table>
+
+    `;
+
+
+    container.innerHTML = html;
+}
+
+
+document
+    .getElementById('showFormButton')
+    .addEventListener('click', function() {
+
+        document
+            .getElementById('resultFormContainer')
+            .style.display = 'block';
+
+    });
+
+
+document
+    .getElementById('cancelButton')
+    .addEventListener('click', function() {
+
+        document
+            .getElementById('resultFormContainer')
+            .style.display = 'none';
+
+    });
+
+
+document
+    .getElementById('resultForm')
+    .addEventListener('submit', async function(event) {
+
+        event.preventDefault();
+
+
+        const data = {
+
+            race_id:
+                document.getElementById('race_id').value,
+
+            horse_id:
+                document.getElementById('horse_id').value,
+
+            jockey_id:
+                document.getElementById('jockey_id').value,
+
+            place:
+                document.getElementById('place').value,
+
+            finish_time:
+                document.getElementById('finish_time').value
+
+        };
+
+
+        const response = await fetch(
+            '../api/results.php',
+            {
+                method: 'POST',
+
+                headers: {
+                    'Content-Type':
+                        'application/json'
+                },
+
+                body: JSON.stringify(data)
+            }
+        );
+
+
+        const result =
+            await response.json();
+
+
+        const message =
+            document.getElementById('formMessage');
+
+
+        if (result.success) {
+
+            message.textContent =
+                'Результат успешно добавлен';
+
+
+            document
+                .getElementById('resultForm')
+                .reset();
+
+
+            document
+                .getElementById('resultFormContainer')
+                .style.display = 'none';
+
+
+            loadResults();
+
+        } else {
+
+            message.textContent =
+                result.message ||
+                'Ошибка добавления';
+
+        }
+
+    });
+
+
+async function editResult(id) {
+
+    const place = prompt(
+        'Введите новое место:'
+    );
+
+
+    if (!place) {
+        return;
+    }
+
+
+    const finishTime = prompt(
+        'Введите время финиша:'
+    );
+
+
+    const response = await fetch(
+        `../api/results.php?id=${id}`,
+        {
+            method: 'PUT',
+
+            headers: {
+                'Content-Type':
+                    'application/json'
+            },
+
+            body: JSON.stringify({
+
+                place: place,
+
+                finish_time: finishTime
+
+            })
+        }
+    );
+
+
+    const result =
+        await response.json();
+
+
+    alert(result.message);
+
+
+    if (result.success) {
+
+        loadResults();
+
+    }
+
+}
+
+
+async function deleteResult(id) {
+
+    const confirmed = confirm(
+        'Удалить этот результат?'
+    );
+
+
+    if (!confirmed) {
+        return;
+    }
+
+
+    const response = await fetch(
+        `../api/results.php?id=${id}`,
+        {
+            method: 'DELETE'
+        }
+    );
+
+
+    const result =
+        await response.json();
+
+
+    alert(result.message);
+
+
+    if (result.success) {
+
+        loadResults();
+
+    }
+
+}
+
+
+document
+    .getElementById('backButton')
+    .addEventListener('click', function() {
+
+        window.location.href = 'index.php';
+
+    });
+
+
+document
+    .getElementById('logoutButton')
+    .addEventListener('click', async function() {
+
+        await fetch(
+            '../api/auth.php?action=logout',
+            {
+                method: 'POST'
+            }
+        );
+
+        window.location.href = 'login.html';
+
+    });
+
+
+async function init() {
+
+    await checkAuth();
+
+    await loadRaces();
+
+    await loadHorses();
+
+    await loadJockeys();
+
+    await loadResults();
+
+}
+
+
+init();
+
+</script>
+
+</body>
+
+</html>

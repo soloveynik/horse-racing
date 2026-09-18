@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Регистрация</title>
+</head>
+<body>
+
+<h1>Регистрация</h1>
+
+<form id="registerForm">
+
+    <input
+        type="text"
+        id="username"
+        placeholder="Имя пользователя"
+        required
+    >
+
+    <br><br>
+
+    <input
+        type="email"
+        id="email"
+        placeholder="Email"
+        required
+    >
+
+    <br><br>
+
+    <input
+        type="password"
+        id="password"
+        placeholder="Пароль"
+        required
+    >
+
+    <br><br>
+
+    <button type="submit">
+        Зарегистрироваться
+    </button>
+
+</form>
+
+<pre id="result"></pre>
+
+<script>
+
+document
+    .getElementById('registerForm')
+    .addEventListener('submit', async function(event) {
+
+        event.preventDefault();
+
+        const data = {
+            username: document.getElementById('username').value,
+            email: document.getElementById('email').value,
+            password: document.getElementById('password').value
+        };
+
+        const response = await fetch('../api/auth.php?action=register', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(data)
+        });
+
+        const result = await response.json();
+
+        document.getElementById('result').textContent =
+            JSON.stringify(result, null, 4);
+    });
+
+</script>
+
+</body>
+</html>

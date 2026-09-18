@@ -1,0 +1,410 @@
+<!DOCTYPE html>
+<html lang="ru">
+
+<head>
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>Лошади — Скачки</title>
+
+    <link rel="stylesheet" href="css/style.css">
+</head>
+
+<body>
+
+<header class="header">
+
+    <div class="logo">
+        🐎 Скачки
+    </div>
+
+    <div class="user-info">
+
+        <span id="username"></span>
+
+        <button id="backButton">
+            Главная
+        </button>
+
+        <button id="logoutButton">
+            Выйти
+        </button>
+
+    </div>
+
+</header>
+
+
+<main class="container">
+
+    <h1>Лошади</h1>
+
+    <button id="showFormButton">
+        + Добавить лошадь
+    </button>
+
+
+    <div id="horseFormContainer" style="display: none;">
+
+        <h2>Добавление лошади</h2>
+
+        <form id="horseForm">
+
+            <input
+                type="text"
+                id="name"
+                placeholder="Имя лошади"
+                required
+            >
+
+            <input
+                type="text"
+                id="breed"
+                placeholder="Порода"
+            >
+
+            <input
+                type="number"
+                id="birth_year"
+                placeholder="Год рождения"
+            >
+
+            <input
+                type="number"
+                id="owner_id"
+                placeholder="ID владельца"
+                required
+            >
+
+            <button type="submit">
+                Сохранить
+            </button>
+
+            <button
+                type="button"
+                id="cancelButton"
+            >
+                Отмена
+            </button>
+
+        </form>
+
+        <p id="formMessage"></p>
+
+    </div>
+
+
+    <h2>Список лошадей</h2>
+
+    <div id="horsesContainer">
+        Загрузка...
+    </div>
+
+</main>
+
+
+<script>
+
+async function checkAuth() {
+
+    const response = await fetch(
+        '../api/auth.php?action=me'
+    );
+
+    const result = await response.json();
+
+    if (!result.success) {
+        window.location.href = 'login.html';
+        return;
+    }
+
+    document.getElementById('username').textContent =
+        result.user.username;
+}
+
+
+async function loadHorses() {
+
+    const response = await fetch(
+        '../api/horses.php'
+    );
+
+    const result = await response.json();
+
+    const container =
+        document.getElementById('horsesContainer');
+
+    if (!result.success) {
+
+        container.textContent =
+            'Не удалось загрузить список лошадей';
+
+        return;
+    }
+
+    if (result.data.length === 0) {
+
+        container.innerHTML =
+            '<p>Лошади пока не добавлены.</p>';
+
+        return;
+    }
+
+
+    let html = `
+        <table border="1" cellpadding="10">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Имя</th>
+                    <th>Порода</th>
+                    <th>Год рождения</th>
+                    <th>Владелец</th>
+                    <th>Действия</th>
+                </tr>
+            </thead>
+            <tbody>
+    `;
+
+
+    result.data.forEach(horse => {
+
+        html += `
+            <tr>
+                <td>${horse.id}</td>
+                <td>${horse.name}</td>
+                <td>${horse.breed ?? ''}</td>
+                <td>${horse.birth_year ?? ''}</td>
+          <td>${horse.owner_name}</td>
+
+<td>
+    <button onclick="editHorse(${horse.id})">
+        Изменить
+    </button>
+
+    <button onclick="deleteHorse(${horse.id})">
+        Удалить
+    </button>
+</td>
+            </tr>
+        `;
+
+    });
+
+
+    html += `
+            </tbody>
+        </table>
+    `;
+
+
+    container.innerHTML = html;
+}
+
+
+document
+    .getElementById('showFormButton')
+    .addEventListener('click', function() {
+
+        document
+            .getElementById('horseFormContainer')
+            .style.display = 'block';
+
+    });
+
+
+document
+    .getElementById('cancelButton')
+    .addEventListener('click', function() {
+
+        document
+            .getElementById('horseFormContainer')
+            .style.display = 'none';
+
+    });
+
+
+document
+    .getElementById('horseForm')
+    .addEventListener('submit', async function(event) {
+
+        event.preventDefault();
+
+
+        const data = {
+
+            name:
+                document.getElementById('name').value,
+
+            breed:
+                document.getElementById('breed').value,
+
+            birth_year:
+                document.getElementById('birth_year').value,
+
+            owner_id:
+                document.getElementById('owner_id').value
+
+        };
+
+
+        const response = await fetch(
+            '../api/horses.php',
+            {
+                method: 'POST',
+
+                headers: {
+                    'Content-Type':
+                        'application/json'
+                },
+
+                body: JSON.stringify(data)
+            }
+        );
+
+
+        const result =
+            await response.json();
+
+
+        const message =
+            document.getElementById('formMessage');
+
+
+        if (result.success) {
+
+            message.textContent =
+                'Лошадь успешно добавлена';
+
+            document
+                .getElementById('horseForm')
+                .reset();
+
+            document
+                .getElementById('horseFormContainer')
+                .style.display = 'none';
+
+            loadHorses();
+
+        } else {
+
+            message.textContent =
+                result.message ||
+                'Ошибка добавления';
+
+        }
+
+    });
+
+
+document
+    .getElementById('backButton')
+    .addEventListener('click', function() {
+
+        window.location.href = 'index.php';
+
+    });
+
+
+document
+    .getElementById('logoutButton')
+    .addEventListener('click', async function() {
+
+        await fetch(
+            '../api/auth.php?action=logout',
+            {
+                method: 'POST'
+            }
+        );
+
+        window.location.href = 'login.html';
+
+    });
+async function deleteHorse(id) {
+
+    const confirmed = confirm(
+        'Вы действительно хотите удалить эту лошадь?'
+    );
+
+    if (!confirmed) {
+        return;
+    }
+
+    const response = await fetch(
+        `../api/horses.php?id=${id}`,
+        {
+            method: 'DELETE'
+        }
+    );
+
+    const result = await response.json();
+
+    alert(result.message);
+
+    if (result.success) {
+        loadHorses();
+    }
+}
+
+
+async function editHorse(id) {
+
+    const name = prompt(
+        'Введите новое имя лошади:'
+    );
+
+    if (!name) {
+        return;
+    }
+
+    const breed = prompt(
+        'Введите породу:'
+    );
+
+    const birthYear = prompt(
+        'Введите год рождения:'
+    );
+
+    const ownerId = prompt(
+        'Введите ID владельца:'
+    );
+
+    const response = await fetch(
+        `../api/horses.php?id=${id}`,
+        {
+            method: 'PUT',
+
+            headers: {
+                'Content-Type': 'application/json'
+            },
+
+            body: JSON.stringify({
+                name: name,
+                breed: breed,
+                birth_year: birthYear,
+                owner_id: ownerId
+            })
+        }
+    );
+
+    const result = await response.json();
+
+    alert(result.message);
+
+    if (result.success) {
+        loadHorses();
+    }
+}
+
+checkAuth();
+loadHorses();
+
+</script>
+
+</body>
+
+</html>

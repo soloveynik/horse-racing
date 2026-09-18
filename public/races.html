@@ -1,0 +1,485 @@
+<!DOCTYPE html>
+<html lang="ru">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>Скачки — Скачки</title>
+
+    <link rel="stylesheet" href="css/style.css">
+
+</head>
+
+<body>
+
+<header class="header">
+
+    <div class="logo">
+        🐎 Скачки
+    </div>
+
+    <div class="user-info">
+
+        <span id="username"></span>
+
+        <button id="backButton">
+            Главная
+        </button>
+
+        <button id="logoutButton">
+            Выйти
+        </button>
+
+    </div>
+
+</header>
+
+
+<main class="container">
+
+    <h1>Скачки</h1>
+
+    <button id="showFormButton">
+        + Добавить скачку
+    </button>
+
+
+    <div
+        id="raceFormContainer"
+        style="display: none;"
+    >
+
+        <h2>Добавление скачки</h2>
+
+        <form id="raceForm">
+
+            <input
+                type="text"
+                id="name"
+                placeholder="Название скачки"
+                required
+            >
+
+            <input
+                type="date"
+                id="race_date"
+                required
+            >
+
+            <input
+                type="text"
+                id="location"
+                placeholder="Место проведения"
+            >
+
+            <select id="status">
+
+                <option value="Запланирована">
+                    Запланирована
+                </option>
+
+                <option value="Проводится">
+                    Проводится
+                </option>
+
+                <option value="Завершена">
+                    Завершена
+                </option>
+
+            </select>
+
+
+            <button type="submit">
+                Сохранить
+            </button>
+
+            <button
+                type="button"
+                id="cancelButton"
+            >
+                Отмена
+            </button>
+
+        </form>
+
+        <p id="formMessage"></p>
+
+    </div>
+
+
+    <h2>Список скачек</h2>
+
+    <div id="racesContainer">
+        Загрузка...
+    </div>
+
+</main>
+
+
+<script>
+
+async function checkAuth() {
+
+    const response = await fetch(
+        '../api/auth.php?action=me'
+    );
+
+    const result = await response.json();
+
+    if (!result.success) {
+
+        window.location.href = 'login.html';
+
+        return;
+    }
+
+    document.getElementById('username').textContent =
+        result.user.username;
+}
+
+
+async function loadRaces() {
+
+    const response = await fetch(
+        '../api/races.php'
+    );
+
+    const result = await response.json();
+
+    const container =
+        document.getElementById('racesContainer');
+
+
+    if (!result.success) {
+
+        container.textContent =
+            'Не удалось загрузить список скачек';
+
+        return;
+    }
+
+
+    if (result.data.length === 0) {
+
+        container.innerHTML =
+            '<p>Скачки пока не добавлены.</p>';
+
+        return;
+    }
+
+
+    let html = `
+        <table border="1" cellpadding="10">
+
+            <thead>
+
+                <tr>
+
+                    <th>ID</th>
+
+                    <th>Название</th>
+
+                    <th>Дата</th>
+
+                    <th>Место</th>
+
+                    <th>Статус</th>
+
+                    <th>Действия</th>
+
+                </tr>
+
+            </thead>
+
+            <tbody>
+    `;
+
+
+    result.data.forEach(race => {
+
+        html += `
+
+            <tr>
+
+                <td>${race.id}</td>
+
+                <td>${race.name}</td>
+
+                <td>${race.race_date}</td>
+
+                <td>${race.location ?? ''}</td>
+
+                <td>${race.status}</td>
+
+                <td>
+
+                    <button
+                        onclick="editRace(${race.id})"
+                    >
+                        Изменить
+                    </button>
+
+                    <button
+                        onclick="deleteRace(${race.id})"
+                    >
+                        Удалить
+                    </button>
+
+                </td>
+
+            </tr>
+
+        `;
+
+    });
+
+
+    html += `
+
+            </tbody>
+
+        </table>
+
+    `;
+
+
+    container.innerHTML = html;
+}
+
+
+document
+    .getElementById('showFormButton')
+    .addEventListener('click', function() {
+
+        document
+            .getElementById('raceFormContainer')
+            .style.display = 'block';
+
+    });
+
+
+document
+    .getElementById('cancelButton')
+    .addEventListener('click', function() {
+
+        document
+            .getElementById('raceFormContainer')
+            .style.display = 'none';
+
+    });
+
+
+document
+    .getElementById('raceForm')
+    .addEventListener('submit', async function(event) {
+
+        event.preventDefault();
+
+
+        const data = {
+
+            name:
+                document.getElementById('name').value,
+
+            race_date:
+                document.getElementById('race_date').value,
+
+            location:
+                document.getElementById('location').value,
+
+            status:
+                document.getElementById('status').value
+
+        };
+
+
+        const response = await fetch(
+            '../api/races.php',
+            {
+                method: 'POST',
+
+                headers: {
+                    'Content-Type':
+                        'application/json'
+                },
+
+                body: JSON.stringify(data)
+            }
+        );
+
+
+        const result =
+            await response.json();
+
+
+        const message =
+            document.getElementById('formMessage');
+
+
+        if (result.success) {
+
+            message.textContent =
+                'Скачка успешно добавлена';
+
+            document
+                .getElementById('raceForm')
+                .reset();
+
+            document
+                .getElementById('raceFormContainer')
+                .style.display = 'none';
+
+            loadRaces();
+
+        } else {
+
+            message.textContent =
+                result.message ||
+                'Ошибка добавления';
+
+        }
+
+    });
+
+
+async function editRace(id) {
+
+    const name = prompt(
+        'Введите название скачки:'
+    );
+
+    if (!name) {
+        return;
+    }
+
+
+    const raceDate = prompt(
+        'Введите дату в формате ГГГГ-ММ-ДД:'
+    );
+
+    if (!raceDate) {
+        return;
+    }
+
+
+    const location = prompt(
+        'Введите место проведения:'
+    );
+
+
+    const status = prompt(
+        'Введите статус: Запланирована, Проводится или Завершена'
+    );
+
+
+    const response = await fetch(
+        `../api/races.php?id=${id}`,
+        {
+            method: 'PUT',
+
+            headers: {
+                'Content-Type':
+                    'application/json'
+            },
+
+            body: JSON.stringify({
+
+                name: name,
+
+                race_date: raceDate,
+
+                location: location,
+
+                status: status
+
+            })
+        }
+    );
+
+
+    const result =
+        await response.json();
+
+
+    alert(result.message);
+
+
+    if (result.success) {
+        loadRaces();
+    }
+}
+
+
+async function deleteRace(id) {
+
+    const confirmed = confirm(
+        'Вы действительно хотите удалить эту скачку?'
+    );
+
+
+    if (!confirmed) {
+        return;
+    }
+
+
+    const response = await fetch(
+        `../api/races.php?id=${id}`,
+        {
+            method: 'DELETE'
+        }
+    );
+
+
+    const result =
+        await response.json();
+
+
+    alert(result.message);
+
+
+    if (result.success) {
+        loadRaces();
+    }
+}
+
+
+document
+    .getElementById('backButton')
+    .addEventListener('click', function() {
+
+        window.location.href = 'index.php';
+
+    });
+
+
+document
+    .getElementById('logoutButton')
+    .addEventListener('click', async function() {
+
+        await fetch(
+            '../api/auth.php?action=logout',
+            {
+                method: 'POST'
+            }
+        );
+
+        window.location.href = 'login.html';
+
+    });
+
+
+checkAuth();
+
+loadRaces();
+
+</script>
+
+</body>
+
+</html>

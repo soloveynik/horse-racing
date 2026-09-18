@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Тест API</title>
+</head>
+<body>
+
+<h1>Добавление лошади</h1>
+
+<form id="horseForm">
+
+    <input
+        type="text"
+        id="name"
+        placeholder="Имя лошади"
+        required
+    >
+
+    <br><br>
+
+    <input
+        type="text"
+        id="breed"
+        placeholder="Порода"
+    >
+
+    <br><br>
+
+    <input
+        type="number"
+        id="birth_year"
+        placeholder="Год рождения"
+    >
+
+    <br><br>
+
+    <input
+        type="number"
+        id="owner_id"
+        placeholder="ID владельца"
+        required
+    >
+
+    <br><br>
+
+    <button type="submit">
+        Добавить лошадь
+    </button>
+
+</form>
+
+<pre id="result"></pre>
+
+<script>
+
+document
+    .getElementById('horseForm')
+    .addEventListener('submit', async function(event) {
+
+        event.preventDefault();
+
+        const data = {
+            name: document.getElementById('name').value,
+            breed: document.getElementById('breed').value,
+            birth_year: document.getElementById('birth_year').value,
+            owner_id: document.getElementById('owner_id').value
+        };
+
+        const response = await fetch('../api/horses.php', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(data)
+        });
+
+        const result = await response.json();
+
+        document.getElementById('result').textContent =
+            JSON.stringify(result, null, 4);
+    });
+
+</script>
+
+</body>
+</html>
