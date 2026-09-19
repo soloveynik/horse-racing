@@ -10,7 +10,8 @@ try {
     echo json_encode([
         'success' => true,
         'status' => 'ok',
-        'database' => 'connected'
+       'database' => 'connected',
+'timestamp' => date('c')
     ], JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
 
 } catch (PDOException $e) {
