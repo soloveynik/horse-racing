@@ -3,7 +3,7 @@ set -e
 
 APP_DIR=/opt/myapp
 CONF_DIR=/etc/myapp
-REPO_URL="<https://github.com/soloveynik/horse-racing/tree/test1>"
+REPO_URL="https://github.com/soloveynik/horse-racing.git"
 
 echo "[1/7] Пакеты..."
 apt update
