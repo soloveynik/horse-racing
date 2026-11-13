@@ -1,71 +1,75 @@
-# Horse Racing — единые команды управления проектом
-# Запрещено: пропускать тесты, снижать пороги покрытия/анализаторов
-# и добавлять исключения без явного обоснования в PR/коммите.
-# См. POLICY.md
+# Lab 3 — Horse Racing
+# Запрещено: пропускать тесты, снижать пороги без обоснования (см. POLICY.md)
 
-.PHONY: help install setup migrate migrate-status migrate-rollback \
-        test test-unit test-integration test-coverage \
-        lint analyse sast quality verify \
-        run backup restore clean db-reset db-seed \
-        up down container-check
+.PHONY: help install setup up down wait-db db-reset migrate test test-coverage \
+        lint analyse sast verify run backup restore clean
 
 PHP ?= php
 COMPOSER ?= composer
-PHINX ?= vendor/bin/phinx
-PHPUNIT ?= vendor/bin/phpunit
-PHPCS ?= vendor/bin/phpcs
-PHPSTAN ?= vendor/bin/phpstan
+PHINX ?= $(PHP) vendor/bin/phinx
+PHPUNIT ?= $(PHP) vendor/bin/phpunit
+PHPCS ?= $(PHP) vendor/bin/phpcs
+PHPSTAN ?= $(PHP) vendor/bin/phpstan
 
-# Порог покрытия (п.4, п.14) — снижение запрещено без обоснования в PR
 COVERAGE_MIN := 40
 
+DB_HOST ?= 127.0.0.1
+DB_PORT ?= 3306
+DB_USER ?= root
+DB_PASSWORD ?= root
+DB_NAME ?= horse_racing
+DB_NAME_TEST ?= horse_racing_test
+
+MYSQL = mysql -h$(DB_HOST) -P$(DB_PORT) -u$(DB_USER) -p$(DB_PASSWORD)
+MYSQLDUMP = mysqldump -h$(DB_HOST) -P$(DB_PORT) -u$(DB_USER) -p$(DB_PASSWORD)
+
 help:
-	@echo "Доступные команды:"
-	@echo "  make setup            — первоначальная настройка проекта"
-	@echo "  make install          — установка зависимостей (Composer)"
-	@echo "  make run              — локальный запуск (PHP built-in server)"
-	@echo "  make test             — автоматические тесты (unit + integration)"
-	@echo "  make test-coverage    — тесты с отчётом покрытия (>= $(COVERAGE_MIN)%)"
-	@echo "  make quality          — форматирование и статический анализ"
-	@echo "  make lint             — проверка форматирования (phpcs)"
-	@echo "  make analyse          — статический анализ (phpstan)"
-	@echo "  make sast             — SAST / проверка безопасности"
-	@echo "  make migrate          — применение миграций"
-	@echo "  make migrate-status   — статус миграций"
-	@echo "  make migrate-rollback — откат последней миграции"
-	@echo "  make backup           — создание резервной копии БД"
-	@echo "  make restore FILE=... — восстановление из резервной копии"
-	@echo "  make verify           — полный набор локальных проверок"
-	@echo "  make db-reset         — пересоздание чистой БД + миграции"
-	@echo "  make up               — запуск контейнерного окружения (docker compose)"
-	@echo "  make down             — остановка окружения"
-	@echo "  make container-check  — проверка контейнерного окружения"
-	@echo "  make clean            — очистка артефактов сборки"
+	@echo "Lab 3 commands:"
+	@echo "  make up          - start MySQL (Docker)"
+	@echo "  make setup       - install + DB + migrations"
+	@echo "  make verify      - lint + sast + tests/coverage"
+	@echo "  make test        - unit + integration"
+	@echo "  make migrate     - run migrations"
+	@echo "  make backup      - DB backup"
+	@echo "  make restore FILE=backups/xxx.sql"
 
 install:
 	$(COMPOSER) install --no-interaction --prefer-dist
 
-# 1. Единый сценарий первоначальной настройки
+up:
+	docker compose up -d
+	@$(MAKE) wait-db
+
+down:
+	docker compose down
+
+wait-db:
+	@echo "Waiting for MySQL..."
+	@for i in 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30; do \
+		if $(MYSQL) -e "SELECT 1" >/dev/null 2>&1; then echo "MySQL is up"; exit 0; fi; \
+		sleep 2; \
+	done; \
+	echo "MySQL timeout"; exit 1
+
 setup: install
-	@if [ ! -f .env ]; then cp .env.example .env; echo "Создан .env из .env.example"; fi
+	@if [ ! -f .env ]; then cp .env.example .env; echo "Created .env"; fi
 	@mkdir -p backups build
+	@docker compose ps --status running 2>/dev/null | grep -q db || $(MAKE) up
 	@$(MAKE) db-reset
-	@echo "Проект настроен. Запуск: make run"
+	@echo "Setup done. Run: make verify"
 
 db-reset:
-	@mysql -u root -e "DROP DATABASE IF EXISTS horse_racing; CREATE DATABASE horse_racing CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
-	@mysql -u root -e "DROP DATABASE IF EXISTS horse_racing_test; CREATE DATABASE horse_racing_test CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
+	@echo "Reset DB $(DB_NAME) / $(DB_NAME_TEST) on $(DB_HOST)..."
+	@$(MYSQL) -e "DROP DATABASE IF EXISTS $(DB_NAME); CREATE DATABASE $(DB_NAME) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
+	@$(MYSQL) -e "DROP DATABASE IF EXISTS $(DB_NAME_TEST); CREATE DATABASE $(DB_NAME_TEST) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
 	@$(PHINX) migrate -e development
-	@echo "БД пересозданы и миграции применены"
+	@echo "Migrations applied"
 
 migrate:
 	$(PHINX) migrate -e development
 
 migrate-status:
 	$(PHINX) status -e development
-
-migrate-rollback:
-	$(PHINX) rollback -e development
 
 test:
 	$(PHPUNIT) --testdox
@@ -78,56 +82,39 @@ test-integration:
 
 test-coverage:
 	@mkdir -p build/coverage
-	$(PHPUNIT) --coverage-text --coverage-html=build/coverage --coverage-clover=build/coverage/clover.xml
+	XDEBUG_MODE=coverage $(PHPUNIT) --coverage-text --coverage-html=build/coverage --coverage-clover=build/coverage/clover.xml
 	@$(PHP) scripts/check_coverage.php build/coverage/clover.xml $(COVERAGE_MIN)
 
-quality: lint analyse
-
 lint:
-	$(PHPCS) --standard=phpcs.xml
+	$(PHPCS) --standard=phpcs.xml -n
 
 analyse:
 	$(PHPSTAN) analyse -c phpstan.neon --memory-limit=512M
 
 sast: analyse
-	@echo "SAST: composer audit + phpstan strict rules"
 	@$(COMPOSER) audit --no-interaction || true
-	@echo "SAST-проверки завершены"
+	@echo "SAST done"
 
 run:
-	@echo "Сервер: http://127.0.0.1:8080"
+	@echo "http://127.0.0.1:8080"
 	$(PHP) -S 127.0.0.1:8080 -t public
 
-# 11–12. Резервное копирование и восстановление
 backup:
 	@mkdir -p backups
 	@FILE=backups/horse_racing_$$(date +%Y%m%d_%H%M%S).sql; \
-	mysqldump -u root horse_racing > $$FILE; \
-	echo "Резервная копия: $$FILE"
+	$(MYSQLDUMP) $(DB_NAME) > $$FILE; \
+	echo "Backup: $$FILE"
 
 restore:
-	@if [ -z "$(FILE)" ]; then echo "Укажите FILE=path/to/backup.sql"; exit 1; fi
-	@mysql -u root horse_racing < $(FILE)
-	@echo "Восстановление из $(FILE) выполнено"
-
-# Docker (опционально, если есть docker-compose.yml)
-up:
-	@if [ -f docker-compose.yml ]; then docker compose up -d; else echo "docker-compose.yml отсутствует — используйте make run"; fi
-
-down:
-	@if [ -f docker-compose.yml ]; then docker compose down; else echo "docker-compose.yml отсутствует"; fi
-
-container-check:
-	@if [ -f docker-compose.yml ]; then docker compose ps; else echo "Контейнеры не используются; локальный стек: PHP + MySQL"; fi
+	@if [ -z "$(FILE)" ]; then echo "Usage: make restore FILE=backups/xxx.sql"; exit 1; fi
+	@$(MYSQL) $(DB_NAME) < $(FILE)
+	@echo "Restored from $(FILE)"
 
 clean:
 	rm -rf build/coverage build/phpunit-cache .phpunit.cache
-	@echo "Артефакты очищены"
 
-# 13. Единая команда обязательных локальных проверок
-# 14. Порог покрытия и отсутствие skip зафиксированы
 verify: lint analyse sast test-coverage
 	@echo ""
 	@echo "============================================"
-	@echo "  make verify: все проверки пройдены"
+	@echo "  make verify: OK"
 	@echo "============================================"

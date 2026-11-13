@@ -1,3 +1,1 @@
-<?php
-
-echo "Horse Racing Project works!";
+<?php echo "Horse Racing";

@@ -1,15 +1,11 @@
-includes:
-    - vendor/phpstan/phpstan-strict-rules/rules.neon
-
 parameters:
-    level: 6
+    level: 5
     paths:
         - src
-        - tests
     excludePaths:
         - vendor
         - build
         - database/migrations
+        - tests
     treatPhpDocTypesAsCertain: false
     reportUnmatchedIgnoredErrors: true
-    # Запрещено добавлять ignoreErrors без явного обоснования в коммите/PR

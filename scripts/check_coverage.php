@@ -2,11 +2,6 @@
 
 declare(strict_types=1);
 
-/**
- * Проверяет минимальный порог покрытия по clover.xml.
- * Запрещено снижать порог без обоснования.
- */
-
 if ($argc < 3) {
     fwrite(STDERR, "Usage: php check_coverage.php <clover.xml> <min_percent>\n");
     exit(2);
@@ -26,28 +21,27 @@ if ($xml === false) {
     exit(1);
 }
 
-$metrics = $xml->project->metrics ?? $xml->metrics ?? null;
+$metrics = $xml->project->metrics ?? null;
 if ($metrics === null) {
-    // PHPUnit clover structure
-    $metrics = $xml->project->metrics;
+    fwrite(STDERR, "No metrics in clover report\n");
+    exit(1);
 }
 
 $statements = (int) ($metrics['statements'] ?? 0);
 $covered = (int) ($metrics['coveredstatements'] ?? 0);
 
 if ($statements === 0) {
-    fwrite(STDERR, "No statements measured — coverage unknown\n");
+    fwrite(STDERR, "No statements measured\n");
     exit(1);
 }
 
 $percent = round(($covered / $statements) * 100, 2);
-
-echo "Coverage: {$percent}% (minimum required: {$min}%)\n";
+echo "Coverage: {$percent}% (minimum: {$min}%)\n";
 
 if ($percent < $min) {
-    fwrite(STDERR, "FAIL: coverage {$percent}% is below required {$min}%\n");
+    fwrite(STDERR, "FAIL: coverage {$percent}% < {$min}%\n");
     exit(1);
 }
 
-echo "OK: coverage meets the threshold\n";
+echo "OK: coverage meets threshold\n";
 exit(0);

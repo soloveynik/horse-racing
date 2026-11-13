@@ -1,6 +1,6 @@
 {
     "name": "soloveynik/horse-racing",
-    "description": "\u0412\u0435\u0431-\u043f\u0440\u0438\u043b\u043e\u0436\u0435\u043d\u0438\u0435 \u0434\u043b\u044f \u0443\u0447\u0451\u0442\u0430 \u0438\u043d\u0444\u043e\u0440\u043c\u0430\u0446\u0438\u0438 \u043e \u0441\u043a\u0430\u0447\u043a\u0430\u0445",
+    "description": "Horse Racing - Lab 3",
     "type": "project",
     "license": "MIT",
     "require": {
@@ -26,34 +26,23 @@
             "Tests\\": "tests/"
         }
     },
-    "scripts": {
-        "test": "phpunit",
-        "test:coverage": "phpunit --coverage-text --coverage-html=build/coverage",
-        "lint": "phpcs",
-        "lint:fix": "phpcbf",
-        "analyse": "phpstan analyse",
-        "migrate": "phinx migrate",
-        "migrate:status": "phinx status",
-        "migrate:rollback": "phinx rollback"
-    },
     "config": {
         "sort-packages": true,
-        "allow-plugins": {
-            "phpstan/extension-installer": true
-        },
         "platform": {
             "php": "8.2.0"
         },
-        "audit": {
-            "block": false
+        "allow-plugins": {
+            "phpstan/extension-installer": true
         },
         "policy": {
             "advisories": {
                 "ignore-id": [
-                    "PKSA-rdkp-vv9z-mjkg",
-                    "PKSA-z3gr-8qht-p93v"
+                    "PKSA-rdkp-vv9z-mjkg"
                 ]
             }
+        },
+        "audit": {
+            "block": false
         }
     },
     "minimum-stability": "stable",

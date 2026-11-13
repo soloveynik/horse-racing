@@ -9,6 +9,9 @@ final class Validator
     /**
      * @return list<string>
      */
+    /** @param array<string, mixed> $data
+     * @return list<string>
+     */
     public static function validateUserRegistration(array $data): array
     {
         $errors = [];
@@ -45,6 +48,9 @@ final class Validator
     }
 
     /**
+     * @return list<string>
+     */
+    /** @param array<string, mixed> $data
      * @return list<string>
      */
     public static function validateHorse(array $data, bool $requireId = false): array
@@ -88,6 +94,9 @@ final class Validator
     /**
      * @return list<string>
      */
+    /** @param array<string, mixed> $data
+     * @return list<string>
+     */
     public static function validateOwner(array $data, bool $requireId = false): array
     {
         $errors = [];
@@ -114,6 +123,9 @@ final class Validator
     }
 
     /**
+     * @return list<string>
+     */
+    /** @param array<string, mixed> $data
      * @return list<string>
      */
     public static function validateJockey(array $data, bool $requireId = false): array
@@ -145,6 +157,9 @@ final class Validator
     }
 
     /**
+     * @return list<string>
+     */
+    /** @param array<string, mixed> $data
      * @return list<string>
      */
     public static function validateRace(array $data, bool $requireId = false): array
@@ -202,6 +217,9 @@ final class Validator
     }
 
     /**
+     * @return list<string>
+     */
+    /** @param array<string, mixed> $data
      * @return list<string>
      */
     public static function validateResult(array $data, bool $requireId = false): array

@@ -17,6 +17,9 @@ final class RaceService
     /**
      * @return array{success: bool, data?: array, message?: string, id?: int|string}
      */
+    /** @param array<string, mixed> $data
+     * @return array<string, mixed>
+     */
     public function create(array $data): array
     {
         $errors = Validator::validateRace($data);
@@ -60,6 +63,7 @@ final class RaceService
         return $stmt->fetchAll();
     }
 
+    /** @return array<string, mixed>|null */
     public function findById(int $id): ?array
     {
         $stmt = $this->pdo->prepare(
@@ -74,6 +78,9 @@ final class RaceService
 
     /**
      * @return array{success: bool, message?: string}
+     */
+    /** @param array<string, mixed> $data
+     * @return array<string, mixed>
      */
     public function update(int $id, array $data): array
     {
