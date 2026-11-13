@@ -1,0 +1,21 @@
+[Unit]
+Description=My Application (Flask on Nikita)
+After=network.target
+
+[Service]
+Type=simple
+User=appuser
+Group=appuser
+WorkingDirectory=/opt/myapp
+EnvironmentFile=/etc/myapp/config.env
+ExecStart=/opt/myapp/venv/bin/python /opt/myapp/main.py
+Restart=on-failure
+RestartSec=5
+StandardOutput=journal
+StandardError=journal
+
+# Безопасность: запрет повышения привилегий
+NoNewPrivileges=true
+
+[Install]
+WantedBy=multi-user.target
