@@ -1,18 +1,23 @@
-# Переменные окружения
+# Environment
 .env
 
-# Системные файлы Windows
+# Dependencies
+/vendor/
+
+# Build & coverage artifacts
+/build/
+.phpunit.cache
+.phpunit.result.cache
+
+# Backups (optional — uncomment to ignore)
+# /backups/*.sql
+
+# System / IDE
 Thumbs.db
 Desktop.ini
-
-# IDE
 .vscode/
 .idea/
-
-# Временные файлы
 *.log
 *.tmp
-
-# Кэш
 cache/
 temp/
