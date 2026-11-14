@@ -5,7 +5,6 @@
 ## Быстрый старт
 
 ```bash
-# см. SETUP-CODESPACES.md если вы в GitHub Codespaces
 cp .env.example .env
 docker compose up -d
 composer install
