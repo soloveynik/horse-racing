@@ -1,3 +1,3 @@
 <?php
-
-echo "Horse Racing Project works!";
+$instance = getenv('INSTANCE_ID') ?: 'unknown';
+echo "Horse Racing Project works! Instance: " . $instance;
