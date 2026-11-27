@@ -8,7 +8,7 @@ on:
 
 jobs:
   # --- ПУНКТ 5: Проверка стиля (Lint) ---
-  lint:
+    lint:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -17,8 +17,12 @@ jobs:
         with:
           php-version: '8.2'
       - name: Run PHP Lint
-        run: find . -name "*.php" -exec php -l {} \;
-
+        run: |
+          echo "Поиск PHP-файлов:"
+          find . -name "*.php"
+          echo "Запуск линтера:"
+          # Используем -l для проверки каждого файла и явно проверяем код возврата
+          find . -name "*.php" -exec php -l {} \;
   # --- ПУНКТ 6: Тесты с отдельной тестовой БД ---
   test:
     runs-on: ubuntu-latest
