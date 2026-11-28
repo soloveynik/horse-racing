@@ -26,4 +26,6 @@ try {
 } catch (PDOException $e) {
     die('Ошибка подключения к базе данных');
 }
-$db_password = "super_secret_password_123";
+// test secret
+$aws_access_key_id = "AKIAIOSFODNN7EXAMPLE";
+$aws_secret_access_key = "wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY";
