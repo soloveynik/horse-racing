@@ -32,10 +32,10 @@ jobs:
       - name: Check for hardcoded passwords
         run: |
           if grep -r "super_secret_password_123" --include="*.php" .; then
-            echo "❌ СЕКРЕТ НАЙДЕН! Пайплайн остановлен."
+            echo "СЕКРЕТ НАЙДЕН! Пайплайн остановлен."
             exit 1
           else
-            echo "✅ Секретов не найдено."
+            echo "Секретов не найдено."
           fi
 
   build-and-push:
