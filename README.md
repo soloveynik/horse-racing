@@ -73,3 +73,4 @@ horse-racing/
 ├── .gitignore
 ├── index.php
 └── README.md
+password = "super_secret_password_123"
