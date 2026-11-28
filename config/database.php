@@ -26,4 +26,3 @@ try {
 } catch (PDOException $e) {
     die('Ошибка подключения к базе данных');
 }
-$test_secret = "super_secret_password_123"
